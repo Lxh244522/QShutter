@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/cursor.png</file>
+        <file>image/refresh.png</file>
+        <file>image/shutter.png</file>
+    </qresource>
+</RCC>
