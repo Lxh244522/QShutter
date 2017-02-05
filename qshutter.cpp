@@ -9,6 +9,9 @@ QShutter::QShutter(QWidget *parent)
 //    setCentralWidget();
     m_bPressed = false;
 
+    mainMenuBar = new QMenuBar();
+    setMenuBar(mainMenuBar);
+    QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, false);
 //    setWindowFlags(Qt::FramelessWindowHint | windowFlags());
     createMenu();
 //    initTrayIcon();
@@ -21,7 +24,8 @@ QShutter::~QShutter()
 
 void QShutter::createMenu()
 {
-    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    QMenu *fileMenu = mainMenuBar->addMenu(tr("&File"));
+
     QToolBar *reToolBar = addToolBar(tr("refresh"));
     QToolBar *fileToolBar = addToolBar(tr("File"));
 
@@ -30,16 +34,23 @@ void QShutter::createMenu()
     fileToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     QAction *reloadAction = new QAction(this);
-    reloadAction->setIcon(QIcon(":/image/refresh.png"));
+    reloadAction->setIcon(QIcon(":/Resource/Icon/24x24/refresh.png"));
     reloadAction->setIconText(tr(""));
-//    QFont font = reloadAction->font();
-//    font.setPixelSize(0);
-//    reloadAction->setFont(font);
+
+    QFont font;
+    font.setPixelSize(13);
+//    font.setWeight(QFont::Normal);
 
     QAction *selectAction = new QAction(this);
-    selectAction->setIcon(QIcon(":/image/cursor.png"));
+    selectAction->setIcon(QIcon(":/Resource/Icon/24x24/cursor.png"));
     selectAction->setIconText(tr("Selection"));
+    selectAction->setFont(font);
     connect(selectAction, &QAction::triggered, this, &QShutter::grapWindows);
+
+    QAction *desktopAction = new QAction(this);
+    desktopAction->setIcon(QIcon(":/Resource/Icon/24x24/desktop.png"));
+    desktopAction->setIconText(tr("Desktop"));
+    desktopAction->setFont(font);
 
     fileMenu->addAction(selectAction);
     reToolBar->addAction(reloadAction);
@@ -47,6 +58,7 @@ void QShutter::createMenu()
 //    fileToolBar->addAction(reloadAction);
     fileToolBar->addSeparator();
     fileToolBar->addAction(selectAction);
+    fileToolBar->addAction(desktopAction);
 //    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
 
 //    QMenu *viewMenu = menuBar()->addMenu(tr("&View"));

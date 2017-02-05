@@ -37,6 +37,7 @@ private:
     int m_bPressed;
     QPoint m_point;
     QSystemTrayIcon *trayIcon;
+    QMenuBar *mainMenuBar;
 };
 
 #endif // QSHUTTER_H

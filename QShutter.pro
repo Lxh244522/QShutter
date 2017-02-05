@@ -32,3 +32,5 @@ HEADERS  += qshutter.h \
 
 RESOURCES += \
     image.qrc
+
+DISTFILES +=
