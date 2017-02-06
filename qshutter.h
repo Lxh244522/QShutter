@@ -18,7 +18,6 @@ public:
 
 private:
     void createMenu();
-
     void initTrayIcon();
 
 private slots:

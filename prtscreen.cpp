@@ -4,8 +4,6 @@
 PrtScreen::PrtScreen(QWidget *parent)
     : QWidget(parent)
 {
-    isDrawing = false;
-
     QScreen *screen = QGuiApplication::primaryScreen();
     fullDesktop = screen->grabWindow(QApplication::desktop()->winId()).toImage();
 }
@@ -44,7 +42,6 @@ void PrtScreen::grapWindow()
 void PrtScreen::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        isDrawing = true;
         startPot = event->pos();
         if (!rubberBand) {
             rubberBand = new QRubberBand(QRubberBand::Rectangle, this);

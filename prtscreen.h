@@ -33,7 +33,6 @@ protected:
     void showEvent(QShowEvent *event);
 
 private:
-    bool isDrawing;
     QPoint startPot;
     QPoint endPot;
     QImage fullDesktop;

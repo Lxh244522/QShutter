@@ -26,7 +26,7 @@ void QShutter::createMenu()
 {
     QMenu *fileMenu = mainMenuBar->addMenu(tr("&File"));
 
-    QToolBar *reToolBar = addToolBar(tr("refresh"));
+//    QToolBar *reToolBar = addToolBar(tr("refresh"));
     QToolBar *fileToolBar = addToolBar(tr("File"));
 
     fileToolBar->setMovable(false);
@@ -53,9 +53,9 @@ void QShutter::createMenu()
     desktopAction->setFont(font);
 
     fileMenu->addAction(selectAction);
-    reToolBar->addAction(reloadAction);
-    reToolBar->setMovable(false);
-//    fileToolBar->addAction(reloadAction);
+//    reToolBar->addAction(reloadAction);
+//    reToolBar->setMovable(false);
+    fileToolBar->addAction(reloadAction);
     fileToolBar->addSeparator();
     fileToolBar->addAction(selectAction);
     fileToolBar->addAction(desktopAction);
