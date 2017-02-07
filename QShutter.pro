@@ -33,4 +33,6 @@ HEADERS  += qshutter.h \
 RESOURCES += \
     image.qrc
 
-DISTFILES +=
+DISTFILES += \
+    ../../../Pictures/Workspace 1_011.png \
+    Resource/Qss/style.qss

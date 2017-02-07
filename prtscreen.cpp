@@ -1,9 +1,11 @@
 #include "prtscreen.h"
 #include <QDebug>
+#include <QDir>
 
 PrtScreen::PrtScreen(QWidget *parent)
-    : QWidget(parent)
+    : QDialog(parent)
 {
+    setWindowFlags(Qt::Window);
     QScreen *screen = QGuiApplication::primaryScreen();
     fullDesktop = screen->grabWindow(QApplication::desktop()->winId()).toImage();
 }
@@ -31,11 +33,14 @@ void PrtScreen::grapWindow()
 {
     int width = abs(endPot.x() - startPot.x());
     int height = rubberBand->height();
-    qDebug() << height << endl;
+//    qDebug() << height << endl;
     int x = startPot.x() < endPot.x() ? startPot.x() : endPot.x();
     int y = startPot.y() < endPot.y() ? startPot.y() : endPot.y();
     QImage prts = fullDesktop.copy(x, y, width, height);
-    prts.save(tr("desktop.jpg", "jpg"));
+    QString dir = QDir::homePath();
+    qDebug() << dir << endl;
+    if (prts.save(dir + tr("/Desktop.jpg"), "jpg"));
+        qDebug() << "1" << endl;
 }
 
 

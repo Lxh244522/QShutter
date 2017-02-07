@@ -4,5 +4,7 @@
         <file>Resource/Icon/24x24/refresh.png</file>
         <file>Resource/Icon/24x24/desktop.png</file>
         <file>Resource/Icon/24x24/cursor.png</file>
+        <file>Resource/Image/qsmoon.jpg</file>
+        <file>Resource/Image/Desktop.jpg</file>
     </qresource>
 </RCC>

@@ -11,8 +11,9 @@
 #include <QRubberBand>
 #include <QPixmap>
 #include <QImage>
+#include <QDialog>
 
-class PrtScreen : public QWidget
+class PrtScreen : public QDialog
 {
     Q_OBJECT
 public:
