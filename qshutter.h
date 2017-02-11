@@ -19,11 +19,16 @@ public:
 private:
     void createMenu();
     void initTrayIcon();
+    void grabDesktop();
 
 private slots:
-    void selectRang();
-    void grapWindows();
+    void selectGrabWindows();
+    void newGrab();
+    void newDesktop();
     void scaleImage();
+    void setLabelImage(QImage image);
+    void updateStatusBar();
+    void updateCheckBox();
 
     // QWidget interface
 protected:
@@ -31,19 +36,20 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void resizeEvent(QResizeEvent *event);
-    void showEvent(QShowEvent *event);
+    void showEvent(QShowEvent *);
 
 private:
     int scrWidth;
     int scrHeight;
-    int m_bPressed;
     QImage image;
-    QSize preSize;
-    QLabel *labelImage;
+    QLabel *imageLabel;
+    QLabel *statusLabel;
+    QSpinBox *delaySpinBox;
     QScrollArea *scrollArea;
-    QPoint m_point;
     QSystemTrayIcon *trayIcon;
     QMenuBar *mainMenuBar;
+    QCheckBox *hideThisWindowCheckBox;
+    QStatusBar *mainStatusBar;
 };
 
 #endif // QSHUTTER_H

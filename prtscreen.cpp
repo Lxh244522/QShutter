@@ -1,13 +1,19 @@
 #include "prtscreen.h"
 #include <QDebug>
 #include <QDir>
+#include <QMainWindow>
 
-PrtScreen::PrtScreen(QWidget *parent)
-    : QDialog(parent)
+PrtScreen::PrtScreen(QWidget *parent, QScreen *screen)
+    : QDialog(parent),
+      mainScreen(screen)
 {
+    rubberBand = NULL;
+
     setWindowFlags(Qt::Window);
-    QScreen *screen = QGuiApplication::primaryScreen();
-    fullDesktop = screen->grabWindow(QApplication::desktop()->winId()).toImage();
+//    QScreen *screen = QGuiApplication::primaryScreen();
+//    QMainWindow *object = qobject_cast<QMainWindow*>(this->parent());
+
+    fullDesktop = mainScreen->grabWindow(0).toImage();
 }
 
 void PrtScreen::setBackgroundImage()
@@ -29,7 +35,7 @@ void PrtScreen::setBackgroundImage()
     this->setPalette(palette);
 }
 
-void PrtScreen::grapWindow()
+void PrtScreen::grabWindow()
 {
     int width = abs(endPot.x() - startPot.x());
     int height = rubberBand->height();
@@ -37,10 +43,11 @@ void PrtScreen::grapWindow()
     int x = startPot.x() < endPot.x() ? startPot.x() : endPot.x();
     int y = startPot.y() < endPot.y() ? startPot.y() : endPot.y();
     QImage prts = fullDesktop.copy(x, y, width, height);
-    QString dir = QDir::homePath();
+    QString dir = QDir::currentPath();
     qDebug() << dir << endl;
-    if (prts.save(dir + tr("/Desktop.jpg"), "jpg"));
-        qDebug() << "1" << endl;
+//    if (prts.save(dir + tr("/Desktop.jpg"), "jpg"))
+//        qDebug() << "1" << endl;
+    emit grabFinised(prts);
 }
 
 
@@ -73,7 +80,7 @@ void PrtScreen::keyPressEvent(QKeyEvent *event)
         this->close();
     }
     if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
-        grapWindow();
+        grabWindow();
         this->close();
     }
     QWidget::keyPressEvent(event);

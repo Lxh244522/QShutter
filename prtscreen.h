@@ -17,13 +17,14 @@ class PrtScreen : public QDialog
 {
     Q_OBJECT
 public:
-    explicit PrtScreen(QWidget *parent = 0);
+    explicit PrtScreen(QWidget *parent = 0, QScreen *screen = QGuiApplication::primaryScreen());
 
 signals:
+    void grabFinised(QImage image);
 
 private:
     void setBackgroundImage();
-    void grapWindow();
+    void grabWindow();
 
     // QWidget interface
 protected:
@@ -34,6 +35,7 @@ protected:
     void showEvent(QShowEvent *event);
 
 private:
+    QScreen *mainScreen;
     QPoint startPot;
     QPoint endPot;
     QImage fullDesktop;

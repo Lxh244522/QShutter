@@ -6,44 +6,65 @@
 QShutter::QShutter(QWidget *parent)
     : QMainWindow(parent)
 {
-//    setCentralWidget();
-    m_bPressed = false;
+    imageLabel = new QLabel;
+    imageLabel->setBackgroundRole(QPalette::Base);
+    imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    imageLabel->setScaledContents(true);
+    imageLabel->setMinimumSize(175, 80);
 
-    labelImage = new QLabel;
-//    label->setText(tr("111"));
-    labelImage->setBackgroundRole(QPalette::Base);
-    labelImage->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    labelImage->setScaledContents(true);
+    QPalette palette;
+    palette.setBrush(imageLabel->backgroundRole(), QBrush(QColor(237, 237, 237)));
 
-    image.load(":/Resource/Image/Desktop.jpg");
-    labelImage->setPixmap(QPixmap::fromImage(image));
-    labelImage->setMinimumSize(175, 80);
-//    labelImage->resize(300, 150);
+    mainStatusBar = new QStatusBar();
+    mainStatusBar->setFixedHeight(30);
 
-    QString message = tr("%1 x %2, Size: %3").arg(image.width()).arg(image.height()).arg(image.byteCount());
-    statusBar()->showMessage(message);
+    statusLabel = new QLabel(tr(""), this);
+    hideThisWindowCheckBox = new QCheckBox(tr("Hide This Window"), this);
+    delaySpinBox = new QSpinBox(this);
+    delaySpinBox->setSuffix(tr(" s"));
+    delaySpinBox->setMaximum(60);
+    delaySpinBox->setValue(5);
+    QLabel *tip = new QLabel(tr("Delay: "), this);
+
+
+    typedef void (QSpinBox::*QSpinIntSignal) (int);
+    connect(delaySpinBox, static_cast<QSpinIntSignal>(&QSpinBox::valueChanged),
+            this, &QShutter::updateCheckBox);
 
     scrollArea = new QScrollArea;
-    QPalette palette;
     palette.setBrush(scrollArea->backgroundRole(), QBrush(QColor(237, 237, 237)));
     scrollArea->setPalette(palette);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setWidget(labelImage);
+    scrollArea->setWidget(imageLabel);
     scrollArea->setMinimumHeight(85);
     scrollArea->setMinimumWidth(300);
     scrollArea->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     scrollArea->setVisible(true);
 
-    preSize = image.size();
+    QWidget *widget = new QWidget(this);
 
-    setCentralWidget(scrollArea);
+    setCentralWidget(widget);
+
+    QHBoxLayout *statusBarLayout = new QHBoxLayout;
+    statusBarLayout->addWidget(statusLabel);
+    statusBarLayout->addStretch();
+    statusBarLayout->addWidget(hideThisWindowCheckBox);
+    statusBarLayout->addWidget(tip);
+    statusBarLayout->addWidget(delaySpinBox);
+    statusBarLayout->setContentsMargins(3, 4, 30, 4);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(scrollArea);
+    mainLayout->addLayout(statusBarLayout);
+    mainLayout->setMargin(0);
+    mainLayout->setSpacing(0);
+    widget->setLayout(mainLayout);
 
     mainMenuBar = new QMenuBar();
     setMenuBar(mainMenuBar);
     QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, false);
     createMenu();
-//    initTrayIcon();
 }
 
 QShutter::~QShutter()
@@ -55,7 +76,6 @@ void QShutter::createMenu()
 {
     QMenu *fileMenu = mainMenuBar->addMenu(tr("&File"));
 
-//    QToolBar *reToolBar = addToolBar(tr("refresh"));
     QToolBar *fileToolBar = addToolBar(tr("File"));
 
     fileToolBar->setMovable(false);
@@ -74,16 +94,15 @@ void QShutter::createMenu()
     selectAction->setIcon(QIcon(":/Resource/Icon/24x24/cursor.png"));
     selectAction->setIconText(tr("Selection"));
     selectAction->setFont(font);
-    connect(selectAction, &QAction::triggered, this, &QShutter::grapWindows);
+    connect(selectAction, &QAction::triggered, this, &QShutter::newGrab);
 
     QAction *desktopAction = new QAction(this);
     desktopAction->setIcon(QIcon(":/Resource/Icon/24x24/desktop.png"));
     desktopAction->setIconText(tr("Desktop"));
     desktopAction->setFont(font);
+    connect(desktopAction, &QAction::triggered, this, &QShutter::newDesktop);
 
     fileMenu->addAction(selectAction);
-//    reToolBar->addAction(reloadAction);
-//    reToolBar->setMovable(false);
     fileToolBar->setIconSize(QSize(24, 24));
     fileToolBar->addAction(reloadAction);
     fileToolBar->addSeparator();
@@ -97,7 +116,7 @@ void QShutter::createMenu()
 
 //    QMenu *goMenu = menuBar()->addMenu(tr("&Go"));
 
-    //    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+//    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 }
 
 void QShutter::initTrayIcon()
@@ -112,28 +131,107 @@ void QShutter::initTrayIcon()
     connect(quitAction, &QAction::triggered, this, &QMainWindow::close);
 }
 
-void QShutter::selectRang()
+void QShutter::selectGrabWindows()
 {
-    QPixmap pixmap = QWidget::grab(QRect(QPoint(0, 0), QSize(this->width(), this->height())));
-    if (pixmap.save("widget.png", "png"))
-        qDebug() << "1" << endl;
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (const QWindow *window = this->windowHandle())
+        screen = window->screen();
+    if (!screen)
+        return;
+
+    PrtScreen *fullScreenWidget = new PrtScreen(this, screen);
+    connect(fullScreenWidget, &PrtScreen::grabFinised, this, &QShutter::setLabelImage);
+    fullScreenWidget->show();
+    if (hideThisWindowCheckBox->isChecked())
+        show();
 }
 
-void QShutter::grapWindows()
+void QShutter::newGrab()
 {
-    PrtScreen *fullScreenWidget = new PrtScreen(this);
-    fullScreenWidget->show();
+    if (hideThisWindowCheckBox->isChecked())
+        hide();
+    QTimer::singleShot(1000, this, &QShutter::selectGrabWindows);
+}
+
+void QShutter::newDesktop()
+{
+    if (hideThisWindowCheckBox->isChecked())
+        hide();
+    QTimer::singleShot(delaySpinBox->value() * 1000, this, &QShutter::grabDesktop);
 }
 
 void QShutter::scaleImage()
 {
     QSize imageSize = image.size();
-    QSize centerSize = labelImage->size();
+    QSize centerSize = imageLabel->size();
     if (imageSize.width() > centerSize.width() &&
             imageSize.height() > centerSize.height()) {
         double imageWidth = imageSize.width();
         double widgetWidth = centerSize.width();
-        labelImage->resize(imageSize * (widgetWidth / imageWidth));
+        imageLabel->resize(imageSize * (widgetWidth / imageWidth));
+    }
+}
+
+void QShutter::setLabelImage(QImage image)
+{
+    this->image = image;
+    imageLabel->setPixmap(QPixmap::fromImage(this->image).
+                          scaled(image.size(),
+                                 Qt::IgnoreAspectRatio,
+                                 Qt::SmoothTransformation));
+
+    if (!image.isNull()) {
+        QSize imageSize = image.size();
+        QSize scrollSize = scrollArea->size();
+        double scale = (double)image.width() / (double)image.height();
+
+        int width = scrollSize.width();
+        int height = scrollSize.height();
+        if (scrollSize.width() < imageSize.width() ||
+                scrollSize.height() < imageSize.height()) {
+            if (height * scale <= scrollSize.width()) {
+                imageLabel->resize(height * scale, height);
+            } else {
+                imageLabel->resize(width, width / scale);
+            }
+        }
+        QString message = tr("%1 x %2 pxiel Size: %3 KB")
+                .arg(image.width())
+                .arg(image.height())
+                .arg((double)image.byteCount() / 1024);
+        statusLabel->setText(message);
+    }
+}
+
+void QShutter::grabDesktop()
+{
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (const QWindow *window = this->windowHandle())
+        screen = window->screen();
+    if (!screen)
+        return;
+
+    if (delaySpinBox->value() != 0)
+        QApplication::beep();
+
+    QImage prts = screen->grabWindow(QApplication::desktop()->winId()).toImage();
+    setLabelImage(prts);
+    if (hideThisWindowCheckBox->isChecked())
+        show();
+}
+
+void QShutter::updateStatusBar()
+{
+
+}
+
+void QShutter::updateCheckBox()
+{
+    if (delaySpinBox->value() == 0) {
+        hideThisWindowCheckBox->setDisabled(true);
+        hideThisWindowCheckBox->setChecked(false);
+    } else {
+        hideThisWindowCheckBox->setDisabled(false);
     }
 }
 
@@ -156,45 +254,64 @@ void QShutter::mouseMoveEvent(QMouseEvent *event)
 
 void QShutter::resizeEvent(QResizeEvent *event)
 {
-    QSize imageLabelSize = labelImage->size();
-    QSize scrollSize = scrollArea->size();
-    double scale = (double)image.width() / (double)image.height();
-    if (imageLabelSize.width() > scrollSize.width()) {
-        labelImage->resize(scrollSize.width(), scrollSize.width() / scale);
-    }
-    if (imageLabelSize.height() > scrollSize.height()) {
-        labelImage->resize(scrollSize.height() * scale, scrollSize.height());
-    }
-    if (event->oldSize().width() < event->size().width() && event->oldSize().height() < event->size().height()) {
-        if (labelImage->size().width() < image.size().width() &&
-                labelImage->size().height() < image.size().height()) {
-            int width = scrollSize.width();
-            int height = scrollSize.height();
-            if (height * scale <= scrollSize.width()) {
-                labelImage->resize(height * scale, height);
-            } else {
-                labelImage->resize(width, width / scale);
+    if (!image.isNull()) {
+        QSize imageLabelSize = imageLabel->size();
+        QSize scrollSize = scrollArea->size();
+        double scale = (double)image.width() / (double)image.height();
+        if (imageLabelSize.width() > scrollSize.width()) {
+            imageLabel->resize(scrollSize.width(), scrollSize.width() / scale);
+        }
+        if (imageLabelSize.height() > scrollSize.height()) {
+            imageLabel->resize(scrollSize.height() * scale, scrollSize.height());
+        }
+        if (event->oldSize().width() < event->size().width() && event->oldSize().height() < event->size().height()) {
+            if (imageLabel->size().width() < image.size().width() &&
+                    imageLabel->size().height() < image.size().height()) {
+                int width = scrollSize.width();
+                int height = scrollSize.height();
+                if (height * scale <= scrollSize.width()) {
+                    imageLabel->resize(height * scale, height);
+                } else {
+                    imageLabel->resize(width, width / scale);
+                }
             }
         }
-    }
-    if (event->oldSize().width() < event->size().width() && event->oldSize().height() == event->size().height()) {
-        if (imageLabelSize.width() < scrollSize.width() && imageLabelSize.height() < scrollSize.height()) {
-            if (labelImage->size().width() < image.size().width() &&
-                    labelImage->size().height() < image.size().height()) {
-                labelImage->resize(scrollSize.width(), scrollSize.width() / scale);
+        if (event->oldSize().width() < event->size().width() && event->oldSize().height() == event->size().height()) {
+            if (imageLabelSize.width() < scrollSize.width() && imageLabelSize.height() < scrollSize.height()) {
+                if (imageLabel->size().width() < image.size().width() &&
+                        imageLabel->size().height() < image.size().height()) {
+                    imageLabel->resize(scrollSize.width(), scrollSize.width() / scale);
+                }
             }
         }
-    }
-    if (event->oldSize().height() < event->size().height() && event->oldSize().width() == event->size().width()) {
-        if (imageLabelSize.height() < scrollSize.height() && imageLabelSize.width() < scrollSize.width()) {
-            if (labelImage->size().width() < image.size().width() &&
-                    labelImage->size().height() < image.size().height()) {
-                labelImage->resize(scrollSize.height() * scale, scrollSize.height());
+        if (event->oldSize().height() < event->size().height() && event->oldSize().width() == event->size().width()) {
+            if (imageLabelSize.height() < scrollSize.height() && imageLabelSize.width() < scrollSize.width()) {
+                if (imageLabel->size().width() < image.size().width() &&
+                        imageLabel->size().height() < image.size().height()) {
+                    imageLabel->resize(scrollSize.height() * scale, scrollSize.height());
+                }
             }
         }
     }
 }
 
-void QShutter::showEvent(QShowEvent *event)
+void QShutter::showEvent(QShowEvent *)
 {
+//    if (!image.isNull()) {
+//        qDebug() << "showevent" << endl;
+//        QSize imageSize = image.size();
+//        QSize scrollSize = scrollArea->size();
+//        double scale = (double)image.width() / (double)image.height();
+
+//        int width = scrollSize.width();
+//        int height = scrollSize.height();
+//        if (scrollSize.width() < imageSize.width() &&
+//                scrollSize.height() < imageSize.height()) {
+//            if (height * scale <= scrollSize.width()) {
+//                labelImage->resize(height * scale, height);
+//            } else {
+//                labelImage->resize(width, width / scale);
+//            }
+//        }
+//    }
 }
